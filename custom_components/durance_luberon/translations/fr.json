@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Portail abonnés Durance Lubéron",
+        "description": "Saisissez vos identifiants du portail espace-personnel.duranceluberon.fr",
+        "data": {
+          "login":         "Adresse e-mail",
+          "password":      "Mot de passe",
+          "teleindex_id":  "Identifiant Teleindex (depuis l'URL du portail, ex. 162463)",
+          "scan_interval": "Intervalle de mise à jour (minutes, min. 60)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth":   "Identifiants invalides.",
+      "cannot_connect": "Impossible de se connecter au portail. Vérifiez votre réseau.",
+      "unknown":        "Erreur inconnue."
+    },
+    "abort": {
+      "already_configured": "Ce compte est déjà configuré."
+    }
+  }
+}

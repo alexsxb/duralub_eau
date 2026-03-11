@@ -1,0 +1,13 @@
+{
+  "domain": "durance_luberon",
+  "name": "Durance Lubéron Water",
+  "version": "1.0.0",
+  "documentation": "https://github.com/youruser/hacs-durance-luberon",
+  "issue_tracker": "https://github.com/youruser/hacs-durance-luberon/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@youruser"],
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "homeassistant": "2024.1.0"
+}

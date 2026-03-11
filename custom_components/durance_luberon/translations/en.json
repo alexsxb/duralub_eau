@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Durance Lubéron Water Portal",
+        "description": "Enter your credentials from espace-personnel.duranceluberon.fr",
+        "data": {
+          "login":         "Email address",
+          "password":      "Password",
+          "teleindex_id":  "Teleindex ID (from the portal URL, e.g. 162463)",
+          "scan_interval": "Update interval (minutes, min. 60)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth":   "Invalid credentials.",
+      "cannot_connect": "Cannot connect to the portal.",
+      "unknown":        "Unknown error."
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  }
+}
