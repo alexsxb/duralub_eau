@@ -16,7 +16,7 @@ Récupère automatiquement votre consommation d'eau depuis le portail abonnés D
 ## Installation via HACS
 
 1. Ouvrir HACS → **Intégrations** → **⋮** → **Dépôts personnalisés**
-2. Ajouter l'URL : `https://github.com/youruser/hacs-durance-luberon` en tant qu'**Intégration**
+2. Ajouter l'URL : `https://github.com/alexsxb/duralub_eau` en tant qu'**Intégration**
 3. Rechercher et installer l'intégration
 4. Redémarrer Home Assistant
 5. **Paramètres → Appareils et services → Ajouter une intégration → Durance Lubéron**
