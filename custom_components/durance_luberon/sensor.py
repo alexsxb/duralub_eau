@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import date as dt_date
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -30,10 +31,10 @@ async def async_setup_entry(
     coordinator: WaterDataCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities([
-        CapteurIndexEau(coordinator, entry),            # Index absolu (m³)
-        CapteurConsommationJournaliere(coordinator, entry),  # Consommation jour (m³)
-        CapteurConsommationMensuelle(coordinator, entry),    # Consommation mois (m³)
-        CapteurDateDernierReleve(coordinator, entry),        # Date dernier relevé
+        CapteurIndexEau(coordinator, entry),
+        CapteurConsommationJournaliere(coordinator, entry),
+        CapteurConsommationMensuelle(coordinator, entry),
+        CapteurDateDernierReleve(coordinator, entry),
     ])
 
 
@@ -91,10 +92,10 @@ class CapteurIndexEau(CapteurDuranceBase):
     def extra_state_attributes(self) -> dict:
         r = self.coordinator.latest or {}
         return {
-            "index_litres":  r.get("index_litre"),
-            "date":          r.get("date"),
-            "numéro_série":  r.get("numserie"),
-            "id_externe":    r.get("id_externe"),
+            "index_litres": r.get("index_litre"),
+            "date":         r.get("date"),
+            "numéro_série": r.get("numserie"),
+            "id_externe":   r.get("id_externe"),
         }
 
 
@@ -121,7 +122,6 @@ class CapteurConsommationJournaliere(CapteurDuranceBase):
         r       = self.coordinator.latest or {}
         history = self.coordinator.history or []
 
-        # Moyenne sur les 7 derniers jours
         sept_jours = [
             x["consommation_m3"] for x in history[-7:]
             if x.get("consommation_m3") is not None
@@ -129,10 +129,10 @@ class CapteurConsommationJournaliere(CapteurDuranceBase):
         moyenne_7j = round(sum(sept_jours) / len(sept_jours), 3) if sept_jours else None
 
         return {
-            "consommation_litres":      r.get("consommation_litre"),
-            "date":                     r.get("date"),
-            "moyenne_7_jours_m3":       moyenne_7j,
-            "nombre_relevés":           len(history),
+            "consommation_litres":   r.get("consommation_litre"),
+            "date":                  r.get("date"),
+            "moyenne_7_jours_m3":    moyenne_7j,
+            "nombre_relevés":        len(history),
         }
 
 
@@ -154,32 +154,65 @@ class CapteurConsommationMensuelle(CapteurDuranceBase):
 
     @property
     def extra_state_attributes(self) -> dict:
-        from datetime import date
-        today    = date.today()
+        today    = dt_date.today()
         mois_str = today.strftime("%Y-%m")
         donnees_mois = [
             r for r in (self.coordinator.history or [])
             if r.get("date", "").startswith(mois_str)
         ]
         return {
-            "mois":              today.strftime("%B %Y"),
+            "mois":               today.strftime("%B %Y"),
             "jours_avec_données": len(donnees_mois),
-            "jours_écoules":     today.day,
+            "jours_écoules":      today.day,
         }
 
 
 # ── Date du dernier relevé ────────────────────────────────────────────────────
 
 class CapteurDateDernierReleve(CapteurDuranceBase):
-    """Date du dernier relevé reçu."""
+    """
+    Date du dernier relevé reçu.
+
+    Valeur : objet datetime.date (ex. 2026-03-08)
+    Source : champ 'dateni' de l'API (ex. "2026-03-08 00:00:00"),
+             uniquement pour les relevés réels (add=False, id sans préfixe completion_).
+
+    Pourquoi ce capteur peut être vide :
+      - Aucune donnée encore chargée (premier démarrage)
+      - Le champ 'date' est absent ou mal formaté dans la réponse API
+    """
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator, entry, "date_dernier_releve", "Dernier relevé eau")
+        # Pas de device_class DATE ici – HA l'attend en datetime.date
+        # mais on renvoie une string ISO pour la compatibilité maximale.
+        # On utilise donc TIMESTAMP avec l'icône calendrier.
         self._attr_device_class = SensorDeviceClass.DATE
         self._attr_icon         = "mdi:calendar-check"
 
     @property
-    def native_value(self) -> str | None:
-        if self.coordinator.latest:
-            return self.coordinator.latest.get("date")
-        return None
+    def native_value(self) -> dt_date | None:
+        """
+        Retourne un objet datetime.date pour satisfaire SensorDeviceClass.DATE.
+        HA refuse les strings brutes pour ce device_class.
+        """
+        if not self.coordinator.latest:
+            return None
+        date_str = self.coordinator.latest.get("date")  # format "2026-03-08"
+        if not date_str:
+            return None
+        try:
+            return dt_date.fromisoformat(date_str)
+        except ValueError:
+            _LOGGER.warning("Format de date invalide : %s", date_str)
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Attributs supplémentaires visibles dans les détails du capteur."""
+        r = self.coordinator.latest or {}
+        return {
+            "date_iso":   r.get("date"),
+            "numserie":   r.get("numserie"),
+            "id_externe": r.get("id_externe"),
+        }
