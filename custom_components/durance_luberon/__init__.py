@@ -10,32 +10,25 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import DuranceLuberonClient
-from .const import (
-    DOMAIN,
-    CONF_LOGIN,
-    CONF_PASSWORD,
-    CONF_TELEINDEX_ID,
-    CONF_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
-)
+from .const import DOMAIN, CONF_LOGIN, CONF_PASSWORD, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
 from .coordinator import WaterDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
 PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Configurer l'intégration depuis une config entry."""
     session = async_get_clientsession(hass)
-    client  = DuranceLuberonClient(
+
+    # Plus de teleindex_id en config – le client le découvre tout seul
+    client = DuranceLuberonClient(
         session,
         entry.data[CONF_LOGIN],
         entry.data[CONF_PASSWORD],
-        entry.data[CONF_TELEINDEX_ID],
     )
 
-    intervalle = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    intervalle  = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     coordinator = WaterDataCoordinator(
         hass,
         client,

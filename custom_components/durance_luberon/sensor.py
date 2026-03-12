@@ -58,11 +58,15 @@ class CapteurDuranceBase(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
+        ci = self.coordinator.client.contract_info
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name="Durance Lubéron Eau",
             manufacturer="Durance Lubéron",
             model="Télérelève",
+            serial_number=ci.get("num_contrat", ""),
+            configuration_url=f"https://espace-personnel.duranceluberon.fr/accueil",
+            sw_version=ci.get("teleindex_id", ""),
         )
 
     @property

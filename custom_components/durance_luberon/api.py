@@ -34,18 +34,20 @@ class DuranceLuberonAuthError(DuranceLuberonApiError):
 class DuranceLuberonClient:
     """Client HTTP asynchrone pour le portail."""
 
-    def __init__(self, session: aiohttp.ClientSession, login: str, password: str, teleindex_id: str):
-        self._session      = session
-        self._login        = login
-        self._password     = password
-        self._teleindex_id = teleindex_id
-        self._jwt_token: str | None = None
-        self._cookies: dict = {}
+    def __init__(self, session: aiohttp.ClientSession, login: str, password: str):
+        self._session     = session
+        self._login       = login
+        self._password    = password
+        self._jwt_token: str | None  = None
+        self._cookies: dict          = {}
+        # Découvert automatiquement après login
+        self.teleindex_id: str | None   = None
+        self.contract_info: dict        = {}
 
     # ── Authentification ──────────────────────────────────────────────────
 
     async def authenticate(self) -> None:
-        """Se connecter et récupérer le token JWT."""
+        """Se connecter, récupérer le JWT et découvrir le teleindex_id."""
         payload = {
             "data": {
                 "type": "POICL_Signin",
@@ -80,7 +82,7 @@ class DuranceLuberonClient:
 
             data = await resp.json(content_type=None)
 
-            # Token depuis le corps de la réponse
+            # Token depuis le corps
             try:
                 attrs = data["data"]["attributes"]
                 for key in ("token", "jwt", "access_token", "accessToken"):
@@ -104,9 +106,82 @@ class DuranceLuberonClient:
                     )
 
             if not self._jwt_token:
-                raise DuranceLuberonAuthError("Aucun token JWT trouvé dans la réponse de connexion.")
+                raise DuranceLuberonAuthError("Aucun token JWT trouvé.")
 
             _LOGGER.debug("Authentification réussie.")
+
+        # Découverte automatique du contrat + teleindex_id
+        await self._discover_contract()
+
+    # ── Découverte du contrat ─────────────────────────────────────────────
+
+    async def _discover_contract(self) -> None:
+        """
+        Récupère le contrat via GET /contrat?include=pconso,pconso.pdessadr
+        La réponse contient data[0].id  →  c'est le teleindex_id (ex. "162463").
+
+        Structure JSON:
+          data[0].id                              → teleindex_id
+          data[0].attributes.numcontrat           → numéro de contrat
+          included[type=POICL_Pconso].attributes  → adresse, id_externe
+        """
+        headers = {
+            **HEADERS_BASE,
+            "authorization": f'Jwt id="{self._jwt_token}"',
+            "referer":       f"https://{API_HOST}/accueil",
+            "cookie":        self._cookie_header(),
+        }
+
+        async with self._session.get(
+            f"{API_BASE}/iclients/contrat?include=pconso,pconso.pdessadr",
+            headers=headers,
+            allow_redirects=False,
+        ) as resp:
+            if resp.status != 200:
+                text = await resp.text()
+                raise DuranceLuberonApiError(
+                    f"Impossible de récupérer le contrat (HTTP {resp.status}) : {text[:200]}"
+                )
+            payload = await resp.json(content_type=None)
+
+        data = payload.get("data", [])
+        if not data:
+            raise DuranceLuberonApiError("Aucun contrat trouvé dans la réponse.")
+
+        contrat = data[0]
+
+        # ── teleindex_id = data[0].id ──────────────────────────────────────
+        self.teleindex_id = str(contrat["id"])
+        attrs = contrat.get("attributes", {})
+
+        # Infos complémentaires depuis included
+        adresse    = ""
+        id_externe = ""
+        for item in payload.get("included", []):
+            if item.get("type") == "POICL_Pconso":
+                pconso_attrs = item.get("attributes", {})
+                id_externe   = pconso_attrs.get("id_externe", "")
+                adresse      = pconso_attrs.get("cpltadr", "")
+            if item.get("type") == "POICL_Pdessadr":
+                pa = item.get("attributes", {})
+                if not adresse:
+                    adresse = f"{pa.get('nomvoie','')} {pa.get('cp','')} {pa.get('ville','')}".strip()
+
+        self.contract_info = {
+            "teleindex_id":  self.teleindex_id,
+            "num_contrat":   attrs.get("numcontrat", ""),
+            "actif":         attrs.get("actif", True),
+            "adresse":       adresse,
+            "id_externe":    id_externe,
+            "date_debut":    attrs.get("datedeb", ""),
+        }
+
+        _LOGGER.info(
+            "Contrat découvert : id=%s  num=%s  adresse=%s",
+            self.teleindex_id,
+            self.contract_info["num_contrat"],
+            self.contract_info["adresse"],
+        )
 
     # ── Relevés ───────────────────────────────────────────────────────────
 
@@ -115,11 +190,8 @@ class DuranceLuberonClient:
         date_from: date | None = None,
         date_to:   date | None = None,
     ) -> list[dict]:
-        """
-        Récupérer les index de compteur.
-        Retourne une liste triée par date avec la consommation journalière.
-        """
-        if not self._jwt_token:
+        """Récupérer les index de compteur pour la période donnée."""
+        if not self._jwt_token or not self.teleindex_id:
             await self.authenticate()
 
         if date_to is None:
@@ -128,61 +200,57 @@ class DuranceLuberonClient:
             date_from = date_to - timedelta(days=30)
 
         url = (
-            f"{API_BASE}/iclients/teleindex/{self._teleindex_id}"
+            f"{API_BASE}/iclients/teleindex/{self.teleindex_id}"
             f"/{date_from.strftime('%Y%m%d')}"
             f"/{date_to.strftime('%Y%m%d')}"
             f"?option[completion]=boundary"
         )
 
-        auth_header = f'Jwt id="{self._jwt_token}"'
-        cookie_str  = "; ".join(
-            [f"{k}={v}" for k, v in self._cookies.items()]
-            + [f"Authorization={quote(auth_header)}"]
-        )
-
         headers = {
             **HEADERS_BASE,
-            "authorization": auth_header,
+            "authorization": f'Jwt id="{self._jwt_token}"',
             "referer":       f"https://{API_HOST}/telereleves",
-            "cookie":        cookie_str,
+            "cookie":        self._cookie_header(),
         }
 
         async with self._session.get(url, headers=headers, allow_redirects=False) as resp:
             if resp.status == 401:
-                _LOGGER.info("Token expiré, reconnexion en cours…")
+                _LOGGER.info("Token expiré, reconnexion…")
                 self._jwt_token = None
+                self.teleindex_id = None
                 await self.authenticate()
                 return await self.fetch_readings(date_from, date_to)
 
             if resp.status != 200:
                 text = await resp.text()
-                raise DuranceLuberonApiError(
-                    f"Teleindex HTTP {resp.status} : {text[:200]}"
-                )
+                raise DuranceLuberonApiError(f"Teleindex HTTP {resp.status} : {text[:200]}")
 
             data = await resp.json(content_type=None)
 
-        entries = data.get("data", [])
-        return self._parse_readings(entries)
+        return self._parse_readings(data.get("data", []))
 
-    # ── Analyse ───────────────────────────────────────────────────────────
+    # ── Parsing ───────────────────────────────────────────────────────────
 
     @staticmethod
     def _parse_readings(entries: list) -> list[dict]:
         """
-        Ne conserver que les vrais relevés journaliers (add=False, horodatage 00:00:00).
-        Calcule la consommation journalière par différence des index ni.
+        Filtre et transforme les entrées brutes :
+          - ignore add=True  (valeurs interpolées/estimées)
+          - ignore id commençant par "completion_"
+          - ne garde que les horodatages 00:00:00 (relevé de minuit)
+          - calcule la consommation journalière par différence des index ni
         """
         raw = []
         for entry in entries:
+            entry_id = entry.get("id", "")
+            if entry_id.startswith("completion_"):
+                continue
             attrs = entry.get("attributes", {})
             if attrs.get("add", False):
                 continue
             dateni = attrs.get("dateni", "")
             ni     = attrs.get("ni")
-            if not dateni or ni is None:
-                continue
-            if not dateni.endswith("00:00:00"):
+            if not dateni or ni is None or not dateni.endswith("00:00:00"):
                 continue
             raw.append({
                 "date":       dateni[:10],
@@ -199,13 +267,21 @@ class DuranceLuberonClient:
             curr = raw[i]
             diff = curr["ni_litre"] - prev["ni_litre"]
             result.append({
-                "date":                curr["date"],
-                "index_litre":         curr["ni_litre"],
-                "index_m3":            round(curr["ni_litre"] / 1000, 3),
-                "consommation_litre":  diff,
-                "consommation_m3":     round(diff / 1000, 3),
-                "numserie":            curr["numserie"],
-                "id_externe":          curr["id_externe"],
+                "date":               curr["date"],
+                "index_litre":        curr["ni_litre"],
+                "index_m3":           round(curr["ni_litre"] / 1000, 3),
+                "consommation_litre": diff,
+                "consommation_m3":    round(diff / 1000, 3),
+                "numserie":           curr["numserie"],
+                "id_externe":         curr["id_externe"],
             })
 
         return result
+
+    # ── Helpers ───────────────────────────────────────────────────────────
+
+    def _cookie_header(self) -> str:
+        auth_val = f'Jwt id="{self._jwt_token}"'
+        parts = [f"{k}={v}" for k, v in self._cookies.items()]
+        parts.append(f"Authorization={quote(auth_val)}")
+        return "; ".join(parts)

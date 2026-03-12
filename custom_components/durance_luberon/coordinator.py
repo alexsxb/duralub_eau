@@ -37,9 +37,9 @@ class WaterDataCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Récupérer et préparer les données depuis le portail."""
         try:
-            today       = date.today()
-            debut_mois  = today.replace(day=1)
-            fetch_from  = min(debut_mois, today - timedelta(days=30))
+            today      = date.today()
+            debut_mois = today.replace(day=1)
+            fetch_from = min(debut_mois, today - timedelta(days=30))
 
             releves = await self.client.fetch_readings(
                 date_from=fetch_from,
@@ -58,26 +58,23 @@ class WaterDataCoordinator(DataUpdateCoordinator):
         self.history = releves
         self.latest  = releves[-1]
 
-        # Consommation du mois en cours
         mois_str = today.strftime("%Y-%m")
         self.consommation_mensuelle_m3 = round(
-            sum(
-                r["consommation_m3"]
-                for r in releves
-                if r["date"].startswith(mois_str)
-            ),
+            sum(r["consommation_m3"] for r in releves if r["date"].startswith(mois_str)),
             3,
         )
 
         _LOGGER.debug(
-            "Données mises à jour : %d jours, dernier relevé %s = %.3f m³",
+            "Données mises à jour : %d jours, dernier relevé %s = %.3f m³ (contrat %s)",
             len(releves),
             self.latest["date"],
             self.latest["index_m3"],
+            self.client.teleindex_id,
         )
 
         return {
-            "latest":              self.latest,
-            "history":             self.history,
-            "consommation_mois":   self.consommation_mensuelle_m3,
+            "latest":            self.latest,
+            "history":           self.history,
+            "consommation_mois": self.consommation_mensuelle_m3,
+            "contract_info":     self.client.contract_info,
         }
