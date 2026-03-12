@@ -27,18 +27,15 @@ Copier le dossier `custom_components/durance_luberon/` dans `config/custom_compo
 
 ## Configuration
 
-Lors de la première configuration, les champs suivants sont demandés :
+Lors de la première configuration, seulement deux informations sont nécessaires :
 
 | Champ | Description |
 |-------|-------------|
 | Adresse e-mail | Identifiant de connexion au portail |
 | Mot de passe | Mot de passe du portail |
-| Identifiant Teleindex | Numéro visible dans l'URL du portail (ex. **162463**) |
 | Intervalle | Fréquence de mise à jour en minutes (recommandé : 360 = 6h) |
 
-### Trouver l'identifiant Teleindex
-
-Connectez-vous au portail, allez dans **Télérelèves**, ouvrez les outils développeur du navigateur (F12) → onglet **Réseau**, rechargez la page et repérez une requête vers `/teleindex/`**162463**`/...` — le numéro est votre identifiant.
+L'identifiant du compteur (Teleindex) est récupéré **automatiquement** après connexion — aucune manipulation dans le portail ou les outils développeur n'est nécessaire.
 
 ## Intégration Énergie Home Assistant
 
