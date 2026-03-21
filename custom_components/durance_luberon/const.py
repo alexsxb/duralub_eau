@@ -1,4 +1,4 @@
-"""Constantes pour l'intégration Durance Lubéron."""
+"""Constantes pour l'intégration Durance Luberon."""
 
 DOMAIN = "durance_luberon"
 
@@ -15,4 +15,4 @@ API_ID   = "4f3443744f61c978230053e8370e4c9bd4f0f19f73d44a82624f23943723dee0@icl
 
 # Valeurs par défaut
 DEFAULT_SCAN_INTERVAL = 360   # minutes (6 heures)
-DEFAULT_NAME          = "Durance Lubéron"
+DEFAULT_NAME          = "Durance Luberon"

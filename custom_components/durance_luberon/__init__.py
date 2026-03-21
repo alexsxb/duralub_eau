@@ -1,4 +1,4 @@
-"""Intégration Durance Lubéron Eau pour Home Assistant."""
+"""Intégration Durance Luberon pour Home Assistant."""
 from __future__ import annotations
 
 import logging

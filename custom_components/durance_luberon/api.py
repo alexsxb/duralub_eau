@@ -1,4 +1,4 @@
-"""Client API pour le portail Durance Lubéron."""
+"""Client API pour le portail Durance Luberon."""
 from __future__ import annotations
 
 import logging

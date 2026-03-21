@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator pour Durance Lubéron."""
+"""DataUpdateCoordinator pour Durance Luberon."""
 from __future__ import annotations
 
 import logging
