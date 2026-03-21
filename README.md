@@ -1,8 +1,8 @@
-# Durance Lubéron Eau – Intégration Home Assistant
+# Durance Luberon Eau – Intégration Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 
-Récupère automatiquement votre consommation d'eau depuis le portail abonnés Durance Lubéron et l'expose comme capteurs dans Home Assistant.
+Récupère automatiquement votre consommation d'eau depuis le portail abonnés Durance Luberon et l'expose comme capteurs dans Home Assistant.
 
 ## Capteurs disponibles
 
@@ -19,7 +19,7 @@ Récupère automatiquement votre consommation d'eau depuis le portail abonnés D
 2. Ajouter l'URL : `https://github.com/youruser/hacs-durance-luberon` en tant qu'**Intégration**
 3. Rechercher et installer l'intégration
 4. Redémarrer Home Assistant
-5. **Paramètres → Appareils et services → Ajouter une intégration → Durance Lubéron**
+5. **Paramètres → Appareils et services → Ajouter une intégration → Durance Luberon**
 
 ## Installation manuelle
 

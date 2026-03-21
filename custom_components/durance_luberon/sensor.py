@@ -1,4 +1,4 @@
-"""Capteurs de consommation d'eau Durance Lubéron."""
+"""Capteurs de consommation d'eau Durance Luberon."""
 from __future__ import annotations
 
 import logging
@@ -61,8 +61,8 @@ class CapteurDuranceBase(CoordinatorEntity, SensorEntity):
         ci = self.coordinator.client.contract_info
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
-            name="Durance Lubéron Eau",
-            manufacturer="Durance Lubéron",
+            name="Durance Luberon Eau",
+            manufacturer="Durance Luberon",
             model="Télérelève",
             serial_number=ci.get("num_contrat", ""),
             configuration_url=f"https://espace-personnel.duranceluberon.fr/accueil",

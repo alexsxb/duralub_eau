@@ -27,7 +27,7 @@ STEP_USER_SCHEMA = vol.Schema(
 
 
 class DuranceLuberonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Assistant de configuration pour Durance Lubéron."""
+    """Assistant de configuration pour Durance Luberon."""
 
     VERSION = 1
 
