@@ -1,4 +1,4 @@
-# Durance Luberon Eau – Intégration Home Assistant
+# Durance Luberon – Intégration Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 

@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Durance Luberon Water Portal",
+        "title": "Durance Luberon Portal",
         "description": "Enter your credentials from espace-personnel.duranceluberon.fr",
         "data": {
           "login": "Email address",
