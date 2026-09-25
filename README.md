@@ -27,7 +27,7 @@ Copier le dossier `custom_components/durance_luberon/` dans `config/custom_compo
 
 ## Configuration
 
-Lors de la première configuration, seulement deux informations sont nécessaires :
+Lors de la première configuration, seules les informations suivantes sont nécessaires :
 
 | Champ | Description |
 |-------|-------------|
@@ -36,6 +36,11 @@ Lors de la première configuration, seulement deux informations sont nécessaire
 | Intervalle | Fréquence de mise à jour en minutes (recommandé : 360 = 6h) |
 
 L'identifiant du compteur (Teleindex) est récupéré **automatiquement** après connexion — aucune manipulation dans le portail ou les outils développeur n'est nécessaire.
+
+L'intervalle de mise à jour peut être modifié à tout moment via **Paramètres → Appareils et services → Durance Luberon → Configurer**.
+Si le mot de passe du portail change, Home Assistant propose automatiquement une ré-authentification.
+
+**Version minimale de Home Assistant : 2025.2.0**
 
 ## Intégration Énergie Home Assistant
 

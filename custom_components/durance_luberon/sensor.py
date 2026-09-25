@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date as dt_date
+from datetime import date as dt_date, datetime, timedelta
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -12,11 +12,13 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfVolume
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from . import DuranceLuberonConfigEntry
+from .const import API_HOST, DOMAIN
 from .coordinator import WaterDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,11 +26,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: DuranceLuberonConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Créer les capteurs depuis la config entry."""
-    coordinator: WaterDataCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     async_add_entities([
         CapteurIndexEau(coordinator, entry),
@@ -40,7 +42,7 @@ async def async_setup_entry(
 
 # ── Classe de base ────────────────────────────────────────────────────────────
 
-class CapteurDuranceBase(CoordinatorEntity, SensorEntity):
+class CapteurDuranceBase(CoordinatorEntity[WaterDataCoordinator], SensorEntity):
     """Base commune pour tous les capteurs."""
 
     def __init__(
@@ -65,13 +67,14 @@ class CapteurDuranceBase(CoordinatorEntity, SensorEntity):
             manufacturer="Durance Luberon",
             model="Télérelève",
             serial_number=ci.get("num_contrat", ""),
-            configuration_url=f"https://espace-personnel.duranceluberon.fr/accueil",
+            configuration_url=f"https://{API_HOST}/accueil",
+            entry_type=DeviceEntryType.SERVICE,
             sw_version=ci.get("teleindex_id", ""),
         )
 
     @property
     def available(self) -> bool:
-        return self.coordinator.last_update_success and self.coordinator.latest is not None
+        return super().available and self.coordinator.latest is not None
 
 
 # ── Index absolu ──────────────────────────────────────────────────────────────
@@ -110,8 +113,9 @@ class CapteurConsommationJournaliere(CapteurDuranceBase):
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator, entry, "consommation_jour", "Consommation eau journalière")
+        # WATER n'accepte pas MEASUREMENT : TOTAL + last_reset (début de la période relevée)
         self._attr_device_class               = SensorDeviceClass.WATER
-        self._attr_state_class                = SensorStateClass.MEASUREMENT
+        self._attr_state_class                = SensorStateClass.TOTAL
         self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
         self._attr_icon                       = "mdi:water"
 
@@ -120,6 +124,18 @@ class CapteurConsommationJournaliere(CapteurDuranceBase):
         if self.coordinator.latest:
             return self.coordinator.latest.get("consommation_m3")
         return None
+
+    @property
+    def last_reset(self) -> datetime | None:
+        """Minuit du jour précédant le relevé (la conso couvre les 24 h avant minuit)."""
+        date_str = (self.coordinator.latest or {}).get("date")
+        if not date_str:
+            return None
+        try:
+            jour = dt_date.fromisoformat(date_str) - timedelta(days=1)
+        except ValueError:
+            return None
+        return dt_util.start_of_local_day(jour)
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -158,7 +174,7 @@ class CapteurConsommationMensuelle(CapteurDuranceBase):
 
     @property
     def extra_state_attributes(self) -> dict:
-        today    = dt_date.today()
+        today    = dt_util.now().date()
         mois_str = today.strftime("%Y-%m")
         donnees_mois = [
             r for r in (self.coordinator.history or [])
@@ -188,9 +204,6 @@ class CapteurDateDernierReleve(CapteurDuranceBase):
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator, entry, "date_dernier_releve", "Dernier relevé eau")
-        # Pas de device_class DATE ici – HA l'attend en datetime.date
-        # mais on renvoie une string ISO pour la compatibilité maximale.
-        # On utilise donc TIMESTAMP avec l'icône calendrier.
         self._attr_device_class = SensorDeviceClass.DATE
         self._attr_icon         = "mdi:calendar-check"
 

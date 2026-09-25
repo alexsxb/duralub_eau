@@ -2,23 +2,40 @@
   "config": {
     "step": {
       "user": {
-        "title": "Durance Luberon portal",
+        "title": "Durance Luberon Portal",
         "description": "Zugangsdaten vom Kundencenter (espace-personnel.duranceluberon.fr)",
         "data": {
-          "login":         "E-Mail Adresse",
-          "password":      "Passwort",
-          "teleindex_id":  "Teleindex-ID (aus der Portal-URL, z.B. 162463)",
+          "login": "E-Mail Adresse",
+          "password": "Passwort",
           "scan_interval": "Aktualisierungsintervall (Minuten, min. 60)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneute Anmeldung",
+        "description": "Das Passwort für {login} ist nicht mehr gültig. Bitte das neue Passwort eingeben.",
+        "data": {
+          "password": "Passwort"
         }
       }
     },
     "error": {
-      "invalid_auth":    "Ungültige Zugangsdaten.",
-      "cannot_connect":  "Verbindung zum Portal fehlgeschlagen.",
-      "unknown":         "Unbekannter Fehler."
+      "invalid_auth": "Ungültige Zugangsdaten.",
+      "cannot_connect": "Verbindung zum Portal fehlgeschlagen.",
+      "unknown": "Unbekannter Fehler."
     },
     "abort": {
-      "already_configured": "Dieses Konto ist bereits eingerichtet."
+      "already_configured": "Dieses Konto ist bereits eingerichtet.",
+      "reauth_successful": "Erneute Anmeldung erfolgreich."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Durance Luberon Optionen",
+        "data": {
+          "scan_interval": "Aktualisierungsintervall (Minuten, min. 60)"
+        }
+      }
     }
   }
 }

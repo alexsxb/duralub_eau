@@ -15,4 +15,5 @@ API_ID   = "4f3443744f61c978230053e8370e4c9bd4f0f19f73d44a82624f23943723dee0@icl
 
 # Valeurs par défaut
 DEFAULT_SCAN_INTERVAL = 360   # minutes (6 heures)
+MIN_SCAN_INTERVAL     = 60    # minutes
 DEFAULT_NAME          = "Durance Luberon"

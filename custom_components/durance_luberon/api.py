@@ -189,6 +189,7 @@ class DuranceLuberonClient:
         self,
         date_from: date | None = None,
         date_to:   date | None = None,
+        _retry:    bool = True,
     ) -> list[dict]:
         """Récupérer les index de compteur pour la période donnée."""
         if not self._jwt_token or not self.teleindex_id:
@@ -215,11 +216,13 @@ class DuranceLuberonClient:
 
         async with self._session.get(url, headers=headers, allow_redirects=False) as resp:
             if resp.status == 401:
+                if not _retry:
+                    raise DuranceLuberonAuthError("Accès refusé après reconnexion (HTTP 401).")
                 _LOGGER.info("Token expiré, reconnexion…")
                 self._jwt_token = None
                 self.teleindex_id = None
                 await self.authenticate()
-                return await self.fetch_readings(date_from, date_to)
+                return await self.fetch_readings(date_from, date_to, _retry=False)
 
             if resp.status != 200:
                 text = await resp.text()
