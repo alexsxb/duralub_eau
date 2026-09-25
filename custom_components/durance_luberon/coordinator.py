@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import timedelta
 
 import aiohttp
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import DuranceLuberonClient, DuranceLuberonApiError, DuranceLuberonAuthError
 from .const import DOMAIN
@@ -20,12 +23,14 @@ class WaterDataCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: ConfigEntry,
         client: DuranceLuberonClient,
         update_interval: timedelta,
     ) -> None:
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=update_interval,
         )
@@ -37,7 +42,7 @@ class WaterDataCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Récupérer et préparer les données depuis le portail."""
         try:
-            today      = date.today()
+            today      = dt_util.now().date()
             debut_mois = today.replace(day=1)
             fetch_from = min(debut_mois, today - timedelta(days=30))
 
@@ -46,7 +51,7 @@ class WaterDataCoordinator(DataUpdateCoordinator):
                 date_to=today,
             )
         except DuranceLuberonAuthError as err:
-            raise UpdateFailed(f"Erreur d'authentification : {err}") from err
+            raise ConfigEntryAuthFailed(f"Erreur d'authentification : {err}") from err
         except DuranceLuberonApiError as err:
             raise UpdateFailed(f"Erreur API : {err}") from err
         except aiohttp.ClientError as err:

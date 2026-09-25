@@ -9,6 +9,13 @@
           "password": "Mot de passe",
           "scan_interval": "Intervalle de mise à jour (minutes, min. 60)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Ré-authentification",
+        "description": "Le mot de passe de {login} n'est plus valide. Saisissez le nouveau mot de passe.",
+        "data": {
+          "password": "Mot de passe"
+        }
       }
     },
     "error": {
@@ -17,7 +24,18 @@
       "unknown": "Erreur inconnue."
     },
     "abort": {
-      "already_configured": "Ce compte est déjà configuré."
+      "already_configured": "Ce compte est déjà configuré.",
+      "reauth_successful": "Ré-authentification réussie."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Durance Luberon",
+        "data": {
+          "scan_interval": "Intervalle de mise à jour (minutes, min. 60)"
+        }
+      }
     }
   }
 }

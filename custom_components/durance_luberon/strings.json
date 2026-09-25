@@ -2,22 +2,40 @@
   "config": {
     "step": {
       "user": {
-        "title": "Portail abonnés Durance Luberon",
-        "description": "Saisissez vos identifiants du portail espace-personnel.duranceluberon.fr",
+        "title": "Durance Luberon Portal",
+        "description": "Enter your credentials from espace-personnel.duranceluberon.fr",
         "data": {
-          "login": "Adresse e-mail",
-          "password": "Mot de passe",
-          "scan_interval": "Intervalle de mise à jour (minutes)"
+          "login": "Email address",
+          "password": "Password",
+          "scan_interval": "Update interval (minutes, min. 60)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authentication",
+        "description": "The password for {login} is no longer valid. Please enter the new password.",
+        "data": {
+          "password": "Password"
         }
       }
     },
     "error": {
-      "invalid_auth": "Identifiants invalides.",
-      "cannot_connect": "Impossible de se connecter au portail.",
-      "unknown": "Erreur inconnue."
+      "invalid_auth": "Invalid credentials.",
+      "cannot_connect": "Cannot connect to the portal.",
+      "unknown": "Unknown error."
     },
     "abort": {
-      "already_configured": "Ce compte est déjà configuré."
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Durance Luberon options",
+        "data": {
+          "scan_interval": "Update interval (minutes, min. 60)"
+        }
+      }
     }
   }
 }
